@@ -1,0 +1,35 @@
+Unmarshal into rawExec (map[string]interface{})
+Captures all fields from the request, even invalid ones like "isAdmin".
+Then you check against the whitelist (allowedFields) to see if there’s anything “illegal”.
+Unmarshal into newExec (struct)
+Only maps valid JSON fields that match your struct.
+Extra ones are silently ignored, so you need rawExec step to catch them
+
+//////////////////////////////////////////////
+
+
+In AddFilters:
+
+For word=app → query becomes:
+
+... AND word ILIKE $%d
+
+
+and args = append(args, "%app%")
+
+For origin=latin → query becomes:
+
+... AND origin ILIKE $%d
+
+
+and args = append(args, "%latin%")
+
+Now args = ["%app%", "%latin%"].
+
+Finally, when executing:
+
+rows, err := db.Query(query, args...)
+
+
+👉 $1 will be "%app%"
+👉 $2 will be "%latin%"
