@@ -1,0 +1,53 @@
+# Name of your workflow
+name: Deploy Dictionary Backend
+
+# This workflow runs when you push to the 'main' branch
+on:
+  push:
+    branches: [ main ]
+
+# A workflow run is made up of one or more jobs that can run in parallel
+jobs:
+  # The "deploy" job
+  deploy:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # 1. Get the code from your repository
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up the Go environment
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21' # Change this to your Go version if needed
+
+      # 3. Build the Go binary
+      - name: Build
+        run: go build -o dictionary ./cmd/api
+
+      # 4. Copy the binary to your EC2 instance
+      - name: SCP to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          source: "dictionary" # The file to copy
+          target: "/home/ubuntu/New_Project/dictionary-be" # The destination on the server
+
+      # 5. Connect to EC2 and restart the service
+      - name: Restart Service
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script: |
+            sudo systemctl restart dictionary
+            sudo systemctl status dictionary
