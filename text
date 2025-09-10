@@ -33,3 +33,10 @@ rows, err := db.Query(query, args...)
 
 👉 $1 will be "%app%"
 👉 $2 will be "%latin%"
+
+
+
+/*
+Package-level init happens before .env is loaded → values might be empty.
+Function-level getenv happens after .env is loaded → always safe.
+ */

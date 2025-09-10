@@ -17,6 +17,29 @@ type Exec struct {
 	PasswordTokenExpires sql.NullString `json:"password_token_expires,omitempty" db:"password_token_expires,omitempty"`
 	InactiveStatus       bool           `json:"inactive_status,omitempty" db:"inactive_status,omitempty"`
 	Role                 string         `json:"role,omitempty" db:"role,omitempty"`
+
+	//OAUTH2 Fields
+	OAuthProvider sql.NullString `json:"oauth_provider,omitempty" db:"oauth_provider,omitempty"` //google /github , null for regular useres
+	OAuthID       sql.NullString `json:"oauth_id,omitempty" db:"oauth_id,omitempty"`             // providers users Id
+	IsOAuthUser   bool           `json:"is_oauth_user,omitempty" db:"is_oauth_user,omitempty"`   // flag to identify OAUTH  vs regular users
+}
+
+// OAuth2 user info
+type GoogleUserInfo struct {
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	VerifiedEmail bool   `json:"verified_email"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Picture       string `json:"picture"`
+}
+type GitHubUserInfo struct {
+	ID        int    `json:"id"`
+	Login     string `json:"login"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	AvatarURL string `json:"avatar_url"`
 }
 
 type UpdatePasswordRequest struct {

@@ -7,6 +7,7 @@ import (
 
 func dictionaryRouter() *http.ServeMux {
 	mux := http.NewServeMux()
+
 	//add a word
 	mux.HandleFunc("POST /words/", handlers.AddWordHandler)
 	//update existing word

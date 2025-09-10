@@ -113,7 +113,11 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "account is inactive", http.StatusForbidden)
 		return
 	}
-
+	//TODO (dont know deal with hashed_password not null issue ASAP) Check if user is OAuth user
+	if user.IsOAuthUser || user.HashedPassword == "NO_PASSWORD_OAUTH_USER" {
+		http.Error(w, "This account uses OAuth login. Please use Google/GitHub login.", http.StatusBadRequest)
+		return
+	}
 	err = utils.VerifyPassword(req.HashedPassword, user.HashedPassword)
 	if err != nil {
 		http.Error(w, "Invalid username or password", http.StatusNotFound)

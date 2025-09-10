@@ -13,6 +13,7 @@ var allowedOrigins = []string{
 	"http://127.0.0.1:36225",
 	"http://127.0.0.1:36041",
 	"http://127.0.0.1:44867",
+	"http://dictionary-bucker.s3-website-us-east-1.amazonaws.com",
 }
 
 func Cors(next http.Handler) http.Handler {
