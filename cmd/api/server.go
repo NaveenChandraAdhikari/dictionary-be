@@ -7,6 +7,7 @@ import (
 	"os"
 	mw "restapi/internal/api/middlewares"
 	"restapi/internal/api/middlewares/router"
+	"restapi/internal/pkg/oauth"
 	"restapi/internal/pkg/utils"
 	"restapi/internal/repository/sqlconnect"
 
@@ -20,6 +21,8 @@ func main() {
 		fmt.Println("Error loading .env file")
 		return
 	}
+
+	oauth.InitOAuthConfigs()
 
 	//connect to postgres
 	_, err = sqlconnect.ConnectDb()
@@ -53,7 +56,7 @@ func main() {
 	//	//TLSConfig: tlsConfig,
 	//}
 	// Exclude JWT for public routes like signup/login
-	jwtMiddleware := mw.MiddlewaresExcludePaths(mw.JWTMiddleware, "/signup", "/login")
+	jwtMiddleware := mw.MiddlewaresExcludePaths(mw.JWTMiddleware, "/signup", "/login", "/auth/google/callback", "/auth/github/callback", "/auth/google/login", "/auth/github/login")
 
 	secureMux := mw.Cors(jwtMiddleware(mw.SecurityHeaders(router)))
 
@@ -62,6 +65,7 @@ func main() {
 		Handler: secureMux,
 	}
 	fmt.Println("Starting server at port:", port)
+
 	//err = server.ListenAndServeTLS(cert, key)
 	err = server.ListenAndServe()
 	if err != nil {
