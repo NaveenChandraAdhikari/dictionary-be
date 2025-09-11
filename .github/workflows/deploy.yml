@@ -1,53 +1,58 @@
-# Name of your workflow
 name: Deploy Dictionary Backend
 
-# This workflow runs when you push to the 'main' branch
 on:
   push:
     branches: [ main ]
 
-# A workflow run is made up of one or more jobs that can run in parallel
-jobs:
-  # The "deploy" job
-  deploy:
-    # The type of runner that the job will run on
-    runs-on: ubuntu-latest
+permissions:
+  id-token: write  
+  contents: read
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+env:
+  AWS_REGION: ap-south-1  
+  S3_BUCKET: dictionary-bucker
+  EC2_INSTANCE_ID: i-0da68a080fc829d49
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
     steps:
-      # 1. Get the code from your repository
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Set up the Go environment
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
           go-version: '1.24.5'
 
-      # 3. Build the Go binary
-      - name: Build
+      - name: Build binary
         run: go build -o dictionary ./cmd/api
 
-      # 4. Copy the binary to your EC2 instance
-      - name: SCP to EC2
-        uses: appleboy/scp-action@master
+      - name: Send pre-deploy email
+        uses: dawidd6/action-send-mail@v3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          source: "dictionary" # The file to copy
-          target: "/home/ubuntu/New_Project/dictionary-be" # The destination on the server
+          server_address: smtp.gmail.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "Dictionary Backend Deployment Starting"
+          to: ${{ secrets.EMAIL_USERNAME }}  # Recipient email
+          from: ${{ secrets.EMAIL_USERNAME }}
+          secure: true
+          body: "Deployment for commit ${{ github.sha }} is starting."
 
-      # 5. Connect to EC2 and restart the service
-      - name: Restart Service
-        uses: appleboy/ssh-action@master
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          port: 22
-          script: |
-            sudo systemctl restart dictionary
-            sudo systemctl status dictionary
+          role-to-assume: arn:aws:iam::142816255946:role/DictionaryDeployRole
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Upload binary to S3
+        run: aws s3 cp dictionary s3://${{ env.S3_BUCKET }}/dictionary-${{ github.sha }}
+
+      - name: Deploy via SSM on EC2
+        run: |
+          aws ssm send-command \
+            --instance-ids ${{ env.EC2_INSTANCE_ID }} \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=["aws s3 cp s3://${{ env.S3_BUCKET }}/dictionary-${{ github.sha }} /home/ubuntu/New_Project/dictionary-be/dictionary", "sudo systemctl restart dictionary", "sudo systemctl status dictionary"]'
