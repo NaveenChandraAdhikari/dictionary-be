@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  AWS_REGION: ap-south-1  
+  AWS_REGION: us-east-1  
   S3_BUCKET: dictionary-bucker
   EC2_INSTANCE_ID: i-0da68a080fc829d49
 
